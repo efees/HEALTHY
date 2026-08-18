@@ -4,12 +4,18 @@ import type { HealthProfile } from '../../src/engine/types';
 import type { OFFProduct } from '../../src/types/openFoodFacts';
 
 // Objet minimal, non un produit réel — sert uniquement à vérifier le
-// câblage du registre, pas la logique d'une règle.
-const minimalProduct: OFFProduct = { code: '0000000000000' };
+// câblage du registre, pas la logique d'une règle. origins_tags précisé
+// pour ne pas déclencher la règle origine, qui n'est pas ce que ce test
+// vérifie.
+const minimalProduct: OFFProduct = { code: '0000000000000', origins_tags: ['en:france'] };
 const emptyProfile: HealthProfile = {};
 
 describe('analyze', () => {
-  it('retourne un tableau, jamais undefined, même sans profil renseigné', () => {
+  it('retourne toujours un tableau, jamais undefined', () => {
+    expect(Array.isArray(analyze(minimalProduct, emptyProfile))).toBe(true);
+  });
+
+  it('ne déclenche aucun insight pour un produit minimal sans particularité détectable', () => {
     expect(analyze(minimalProduct, emptyProfile)).toEqual([]);
   });
 

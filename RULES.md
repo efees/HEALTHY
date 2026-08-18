@@ -3,12 +3,16 @@
 Ce document liste, pour chaque règle prévue du moteur (`src/engine/rules/`) :
 son déclencheur, sa source, et le texte type affiché à l'utilisatrice.
 
-**Statut d'implémentation** : la règle arômes (§1) est implémentée et
-testée — c'est la seule qui ne dépend pas de fixtures produit réelles, son
-domaine étant le texte libre d'`ingredients_text_fr`. Toutes les autres
-règles sont encore des stubs dans `src/engine/rules/` qui renvoient `[]`.
-Ce document sert de spécification à écrire contre, une fois les fixtures
-réelles disponibles (`src/fixtures/off/`).
+**Statut d'implémentation** : arômes (§1), ultra-transformation (§2), huile
+de palme (§4), certification (§5) et origine (§6) sont implémentées.
+Sucres déguisés (§3), longueur de liste (§7) et les règles de profil
+(§8-12) restent des stubs dans `src/engine/rules/` qui renvoient `[]`. Sur
+les 5 règles implémentées, seules arômes, certification et origine ont une
+couverture de test **positive** par fixture réelle — ultra-transformation
+et huile de palme n'ont, pour l'instant, que 4 fixtures qui ne les
+déclenchent jamais (aucune n'est NOVA 4, aucune ne contient d'huile de
+palme) : leurs tests de détection positive sont explicitement marqués
+`.todo` plutôt que de passer par absence de cas, voir chaque section.
 
 ## Avertissement sur les sources citées ici
 
@@ -142,6 +146,26 @@ additif autorisé en bio. Source : classification NOVA (Monteiro et al.,
 Université de São Paulo) ; règlement (CE) n° 1333/2008 pour le statut de
 l'additif. »
 
+**Sévérité** : `attention`.
+
+### Implémentation
+
+`src/engine/rules/ultraTransformation.ts`. Le NOVA se lit directement sur
+`nova_group` (entier fourni par OFF, rien à interpréter). Les additifs
+texturants avec code E (E415, E412, E410, E440) se lisent sur
+`additives_tags` — donnée structurée, pas de texte libre à parser,
+contrairement aux arômes. Inuline, fibre d'acacia et maltodextrine n'ont
+pas de code E dans le vocabulaire OFF : recherche par mot isolé dans
+`ingredients_text_fr` (`\binuline\b` etc.), un motif nettement plus simple
+et moins risqué que la grammaire "de X" des arômes.
+
+**Non testé en positif** : les 4 fixtures actuelles sont NOVA 3, 3, 3, 1 —
+aucune n'est NOVA 4 — et aucune ne contient de marqueur de texture. Les cas
+de détection positive sont marqués `.todo` dans
+`__tests__/engine/ultraTransformation.test.ts` plutôt que validés par
+absence ; seule l'absence de faux positif sur les fixtures actuelles est
+testée pour de vrai.
+
 ---
 
 ## 3. Sucres déguisés
@@ -174,6 +198,19 @@ une règle de conformité.
 **Texte type** : « Repère de lecture — contient de l'huile de palme,
 identifiée par Open Food Facts dans la liste d'ingrédients. »
 
+**Sévérité** : `attention`.
+
+### Implémentation
+
+`src/engine/rules/huileDePalme.ts`. Lecture directe du tag `en:palm-oil`
+dans `ingredients_analysis_tags` — donnée structurée, pas de texte à
+interpréter.
+
+**Non testé en positif** : les 4 fixtures actuelles sont toutes
+`palm-oil-free`. Le cas de détection positive est marqué `.todo` dans
+`__tests__/engine/huileDePalme.test.ts` ; seule l'absence de faux positif
+sur les fixtures actuelles est testée pour de vrai.
+
 ---
 
 ## 5. Certification
@@ -196,6 +233,31 @@ FR-BIO-01]. Source : règlement (UE) 2018/848. »
 / Bio Cohérence], un cahier des charges privé, distinct de la certification
 bio officielle. Source : cahier des charges [organisme]. »
 
+**Sévérité** : `info`.
+
+### Implémentation
+
+`src/engine/rules/certification.ts`. Liste fermée de tags connus
+(`en:eu-organic`, `fr:ab-agriculture-biologique` pour l'officiel) plutôt
+qu'un balayage large de `labels_tags` — volontaire : un label sans rapport
+avec le bio (nutriscore, vegan society, planet score, b-corp… tous observés
+sur les fixtures actuelles) ne doit jamais être confondu avec une
+certification. Le code de l'organisme certificateur est extrait par motif
+(`xx-bio-nn` / `xx-öko-nn` / `xx-org-nn`), calibré sur quatre formats
+réellement observés : FR-BIO-01, DE-ÖKO-001, GB-ORG-05, NL-BIO-01 — un
+produit peut en cumuler plusieurs (le muesli Bjorg en porte deux, le beurre
+de cacahuète aussi).
+
+Bien testé en positif : les 4 fixtures actuelles couvrent le cas "aucun
+code" (Gerblé), un code (Vrai), et deux codes (Bjorg, beurre de cacahuète).
+
+**Non testé en positif** : les slugs `en:demeter`, `fr:nature-et-progres`,
+`fr:bio-coherence` pour les labels privés sont une estimation, pas
+vérifiés contre une vraie fixture — une des trois fixtures encore
+attendues doit permettre de les confirmer. Une erreur de slug ici échoue en
+silence (aucun insight), jamais par une fausse classification. Marqué
+`.todo` dans `__tests__/engine/certification.test.ts`.
+
 ---
 
 ## 6. Origine
@@ -217,6 +279,25 @@ confirmer avant affichage.
 
 **Texte type** : « L'origine des matières premières n'est pas précisée pour
 ce produit (seul le pays de vente, [pays], est renseigné). »
+
+**Sévérité** : `attention` (origine absente), `info` (origine déclarée de
+façon large).
+
+### Implémentation
+
+`src/engine/rules/origine.ts`. Distingue une origine précise (un pays réel
+dans `origins_tags`) d'un agrégat réglementaire flou (`en:european-union`,
+`en:non-european-union`, `en:european-union-and-non-european-union`,
+`en:unknown`) — ce dernier n'est pas la même chose qu'une absence totale de
+donnée, d'où deux textes différents plutôt qu'un seul.
+
+Bien testé en positif : les 4 fixtures actuelles couvrent les trois cas —
+absente (Gerblé, aucune donnée d'origine), floue (le muesli Bjorg, agrégat
+UE/hors UE avec lieu de fabrication en Allemagne), précise donc silencieuse
+(le yaourt Vrai, France). Le beurre de cacahuète est un bon exemple de
+données réelles pas parfaitement cohérentes : origine déclarée "hors UE"
+mais fabriqué aux Pays-Bas (UE) — la règle rapporte les deux faits tels
+quels sans trancher la contradiction apparente, ce n'est pas son rôle.
 
 ---
 

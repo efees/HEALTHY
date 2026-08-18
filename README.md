@@ -35,12 +35,21 @@ npm run test:watch
 ```
 
 Le moteur de règles (`src/engine`) est un module TypeScript pur, sans
-dépendance React, entièrement testable en isolation. Sa structure et son
-harnais de test sont en place (`__tests__/engine`). La règle arômes est
-implémentée (voir `RULES.md#1-arômes`) ; les autres restent des stubs qui
-renvoient `[]`, avec des tests `.todo` en attente. Fixtures Open Food Facts
-réelles dans `src/fixtures/off/products` (voir son README) — 4 reçues pour
-l'instant sur les 7 prévues, aucune ne contient d'arôme.
+dépendance React, entièrement testable en isolation. 5 règles sur 12 sont
+implémentées : arômes, ultra-transformation, huile de palme, certification,
+origine (voir `RULES.md`). Les autres (sucres déguisés, longueur de liste,
+règles de profil) restent des stubs qui renvoient `[]`, avec des tests
+`.todo` en attente. Fixtures Open Food Facts réelles dans
+`src/fixtures/off/products` (voir son README) — 4 reçues pour l'instant sur
+les 7 prévues.
+
+Deux règles (ultra-transformation, huile de palme) n'ont encore aucune
+fixture qui déclenche leur cas positif — leurs tests de détection restent
+`.todo` explicitement plutôt que de passer artificiellement par absence de
+cas. `__tests__/engine/produitNonBio.test.ts` vérifie, avec un produit
+construit à la main faute de fixture non-bio disponible, que le moteur se
+tait correctement en dehors de son terrain (aucune des fixtures reçues
+n'est un produit non-bio de contrôle).
 
 ```bash
 npm run measure:aromes   # taux de silence de la règle arômes sur les fixtures
@@ -52,8 +61,9 @@ Le projet avance par paliers (voir historique de commits) :
 
 - [x] 1. Projet Expo, navigation, écrans vides, thème
 - [x] 2. Scan de code-barres et appel Open Food Facts
-- [ ] 3. Moteur de règles et ses tests (structure et harnais en place,
-      logique en attente des fixtures réelles — voir `RULES.md`)
+- [ ] 3. Moteur de règles et ses tests (5/12 règles implémentées ;
+      sucres déguisés, longueur de liste et les règles de profil restent
+      des stubs — voir `RULES.md`)
 - [ ] 4. Branchement du moteur sur la fiche produit
 - [ ] 5. Onboarding et stockage local du profil
 - [ ] 6. Filtrage des insights par profil
