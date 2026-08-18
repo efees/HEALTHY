@@ -10,9 +10,12 @@ export type OFFGrade = 'a' | 'b' | 'c' | 'd' | 'e' | 'unknown' | 'not-applicable
 
 /**
  * Les clés de nutriments OFF suivent le motif `<nutrient>_100g` /
- * `<nutrient>_serving` / `<nutrient>_unit`, avec des dizaines de nutriments
- * possibles selon le produit : pas de liste fermée côté API, d'où
- * l'index signature en plus des clés les plus utilisées par le moteur.
+ * `<nutrient>_serving` / `<nutrient>_unit` / `<nutrient>_modifier`, avec des
+ * dizaines de nutriments possibles selon le produit : pas de liste fermée
+ * côté API, d'où l'index signature en plus des clés les plus utilisées par
+ * le moteur. `_unit` ("kcal", "g"…) et `_modifier` ("~" pour une valeur
+ * approximative, "<", ">"…) sont des chaînes ; les mesures elles-mêmes des
+ * nombres — confirmé sur de vraies réponses API, pas une supposition.
  */
 export interface OFFNutriments {
   'energy-kcal_100g'?: number;
@@ -27,7 +30,7 @@ export interface OFFNutriments {
   sodium_100g?: number;
   potassium_100g?: number;
   phosphorus_100g?: number;
-  [key: string]: number | undefined;
+  [key: string]: number | string | undefined;
 }
 
 /**

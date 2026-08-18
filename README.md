@@ -36,12 +36,15 @@ npm run test:watch
 
 Le moteur de règles (`src/engine`) est un module TypeScript pur, sans
 dépendance React, entièrement testable en isolation. Sa structure et son
-harnais de test sont en place (`__tests__/engine`), mais **la logique des
-règles n'est pas encore implémentée** — chaque règle est un stub qui
-renvoie `[]`, et les tests correspondants sont marqués `.todo`. Les
-fixtures Open Food Facts réelles (`src/fixtures/off/products`, voir son
-README) alimenteront à la fois le mode mock de l'app et ces tests dès
-qu'elles seront ajoutées, sans réécriture de la structure.
+harnais de test sont en place (`__tests__/engine`). La règle arômes est
+implémentée (voir `RULES.md#1-arômes`) ; les autres restent des stubs qui
+renvoient `[]`, avec des tests `.todo` en attente. Fixtures Open Food Facts
+réelles dans `src/fixtures/off/products` (voir son README) — 4 reçues pour
+l'instant sur les 7 prévues, aucune ne contient d'arôme.
+
+```bash
+npm run measure:aromes   # taux de silence de la règle arômes sur les fixtures
+```
 
 ## État d'avancement
 
@@ -56,7 +59,11 @@ Le projet avance par paliers (voir historique de commits) :
 - [ ] 6. Filtrage des insights par profil
 - [ ] 7. Supabase, authentification anonyme, table des avis
 - [ ] 8. Avis segmentés
-- [ ] 9. Historique, cache, mode hors ligne
+- [ ] 9. Historique, cache, mode hors ligne — **point d'attention découvert
+      en récupérant les fixtures : Open Food Facts renvoie une page de
+      blocage aux clients anonymes après quelques requêtes rapprochées.**
+      Prévoir la gestion du 429, un cache local agressif, et un espacement
+      des appels dans le client (`src/api/off.ts`) à cette étape.
 - [ ] 10. Accessibilité, textes légaux, configuration EAS
 
 Documentation complémentaire : [`RULES.md`](./RULES.md) (règles du moteur et
