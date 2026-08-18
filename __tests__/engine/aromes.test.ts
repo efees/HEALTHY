@@ -31,4 +31,19 @@ describe('aromeRule', () => {
     expect(insight.source.label).toContain('1334/2008');
     expect(insight.explanation).not.toMatch(/dangereux|mauvais|toxique|à éviter/i);
   });
+
+  it('n’émet rien pour une source coordonnée ("de citron et de gingembre"), probablement conforme mais non vérifiée', () => {
+    expect(aromeRule(productWith('arôme naturel de citron et de gingembre'), {})).toEqual([]);
+  });
+
+  it('reste silencieuse pour tout le produit si une seule mention est incertaine, même si une autre est clairement non conforme', () => {
+    // "arôme naturel" seul (non conforme) + une source coordonnée (incertaine)
+    // dans le même texte : un signalement partiel donnerait une impression
+    // de certitude que le moteur n'a pas — voir RULES.md#1-arômes.
+    const insights = aromeRule(
+      productWith('arôme naturel, arôme naturel de citron et de gingembre'),
+      {}
+    );
+    expect(insights).toEqual([]);
+  });
 });

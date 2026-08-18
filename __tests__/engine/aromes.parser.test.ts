@@ -77,6 +77,39 @@ describe('parseAromeMentions — mentions multiples dans une même liste', () =>
   });
 });
 
+describe('parseAromeMentions — sources coordonnées (conformes en principe, non vérifiables en détail)', () => {
+  it('classe "incertain" une coordination par "et de" ("de citron et de gingembre")', () => {
+    const [mention] = parseAromeMentions('arôme naturel de citron et de gingembre');
+    expect(mention.verdict).toBe('incertain');
+    expect(mention.source).toBeUndefined();
+  });
+
+  it('classe "incertain" une coordination par "et" sans répétition de "de" ("de citron et gingembre")', () => {
+    const [mention] = parseAromeMentions('arôme naturel de citron et gingembre');
+    expect(mention.verdict).toBe('incertain');
+  });
+
+  it('classe "incertain" une coordination par virgule seule ("de citron, de gingembre")', () => {
+    const [mention] = parseAromeMentions('arôme naturel de citron, de gingembre');
+    expect(mention.verdict).toBe('incertain');
+  });
+
+  it('classe "incertain" une énumération mixte virgule + "et" ("de citron, mandarine et bergamote")', () => {
+    const [mention] = parseAromeMentions('arôme naturel de citron, mandarine et bergamote');
+    expect(mention.verdict).toBe('incertain');
+  });
+
+  it('ne se déclenche pas pour une virgule ordinaire suivie d’un ingrédient sans rapport', () => {
+    // Cas limite assumé dans l'autre sens : si le mot qui suit ressemble à
+    // une énumération ("... et ...") sans être une source, un excès de
+    // silence est possible (voir la note de limites dans parser.ts) — mais
+    // le cas simple, le plus fréquent, ne doit pas être perturbé.
+    const [mention] = parseAromeMentions('arôme naturel de citron, sel');
+    expect(mention.verdict).toBe('conforme');
+    expect(mention.source).toBe('citron');
+  });
+});
+
 describe('parseAromeMentions — incertitude assumée en silence', () => {
   it('classe "incertain" une structure non reconnue plutôt que de deviner', () => {
     const [mention] = parseAromeMentions('arôme naturel: fraise');

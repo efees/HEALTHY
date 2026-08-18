@@ -10,9 +10,12 @@ const SOURCE = {
 
 /**
  * N'émet un insight que pour les mentions classées 'non-conforme' par le
- * parser. Les mentions 'conforme' et 'incertain' ne produisent jamais
- * d'insight : un faux positif ici serait une accusation de non-conformité
- * contre une marque nommée. Le silence est préférable au doute affiché.
+ * parser — et seulement si AUCUNE mention du texte n'est 'incertaine'. Une
+ * seule mention ambiguë suffit à faire taire toute la règle pour ce
+ * produit : un signalement partiel (« cette mention-ci est non conforme »)
+ * à côté d'une mention qu'on n'a pas su trancher donnerait une impression
+ * de certitude que le moteur n'a pas. Le silence total est préférable à un
+ * verdict partiel — voir RULES.md#1-arômes.
  */
 export const aromeRule: Rule = (product) => {
   const text = product.ingredients_text_fr;
@@ -20,7 +23,13 @@ export const aromeRule: Rule = (product) => {
     return [];
   }
 
-  return parseAromeMentions(text)
+  const mentions = parseAromeMentions(text);
+  const hasUncertainty = mentions.some((mention) => mention.verdict === 'incertain');
+  if (hasUncertainty) {
+    return [];
+  }
+
+  return mentions
     .filter((mention) => mention.verdict === 'non-conforme')
     .map((mention, index) => ({
       id: `arome-${index}`,

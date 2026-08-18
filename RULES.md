@@ -77,21 +77,31 @@ séparé de la règle qui en consomme le résultat :
 
 - `src/engine/rules/aromes/parser.ts` — classe chaque mention détectée en
   `conforme` / `non-conforme` / `incertain`. Testé isolément dans
-  `__tests__/engine/aromes.parser.test.ts` (17 cas : accents/casse, pluriel,
-  contraction « d' », mentions multiples, structures non reconnues).
+  `__tests__/engine/aromes.parser.test.ts` (22 cas : accents/casse, pluriel,
+  contraction « d' », mentions multiples, sources coordonnées, structures
+  non reconnues).
 - `src/engine/rules/aromes/index.ts` — la règle elle-même : n'émet un
-  insight que pour les mentions `non-conforme`. Les mentions `conforme` et
-  `incertain` ne produisent **jamais** d'insight. Testée dans
-  `__tests__/engine/aromes.test.ts`.
+  insight que pour les mentions `non-conforme`, **et seulement si aucune
+  mention du produit n'est `incertaine`** — une seule ambiguïté suffit à
+  faire taire toute la règle pour ce produit, pas seulement la mention
+  concernée : un signalement partiel donnerait une impression de certitude
+  que le moteur n'a pas. Testée dans `__tests__/engine/aromes.test.ts`.
 
 Un faux positif sur cette règle est une accusation de non-conformité contre
 une marque nommée — plus grave qu'un faux négatif. Quand le parser ne peut
 pas classer une clause avec confiance, il retourne `incertain`, et la règle
-ne dit rien : le silence est toujours préférable au doute affiché. Limites
-connues du parser (assumées, pas dissimulées — voir les commentaires du
-fichier) : il tolère l'absence d'accent circonflexe mais pas les autres
-fautes de frappe, et une source composée sous un seul « de » (« arôme
-naturel de fraise et de framboise ») n'en compte que la première partie.
+ne dit rien : le silence est toujours préférable au doute affiché.
+
+Sources coordonnées sous un seul « de » (« arôme naturel de citron et de
+gingembre », « de citron, mandarine et bergamote ») sont des formulations
+conformes et fréquentes — le parser les classe `incertain` plutôt que de ne
+vérifier que la première source et affirmer à tort la conformité de
+l'ensemble. Limites connues, assumées (voir les commentaires du fichier) :
+il tolère l'absence d'accent circonflexe mais pas les autres fautes de
+frappe, et une virgule ordinaire suivie d'un mot sans rapport contenant
+fortuitement un « et » (« arôme naturel de citron, poivre et sel ») peut
+aussi déclencher `incertain` à tort — un excès de silence, jamais un excès
+d'accusation.
 
 ---
 
