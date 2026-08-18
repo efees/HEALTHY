@@ -3,10 +3,12 @@
 Ce document liste, pour chaque règle prévue du moteur (`src/engine/rules/`) :
 son déclencheur, sa source, et le texte type affiché à l'utilisatrice.
 
-**Aucune règle n'est encore implémentée** (voir les stubs dans
-`src/engine/rules/`, qui renvoient tous `[]`). Ce document sert de
-spécification à écrire contre, une fois les fixtures réelles disponibles
-(`src/fixtures/off/`).
+**Statut d'implémentation** : la règle arômes (§1) est implémentée et
+testée — c'est la seule qui ne dépend pas de fixtures produit réelles, son
+domaine étant le texte libre d'`ingredients_text_fr`. Toutes les autres
+règles sont encore des stubs dans `src/engine/rules/` qui renvoient `[]`.
+Ce document sert de spécification à écrire contre, une fois les fixtures
+réelles disponibles (`src/fixtures/off/`).
 
 ## Avertissement sur les sources citées ici
 
@@ -57,11 +59,39 @@ dans le texte consolidé actuel. Le brief initial du projet ne citait que le
 seuil des 95 % est en réalité le 1334/2008, mais cela reste à confirmer
 avant affichage.
 
-**Texte type** : « Cet arôme est étiqueté « arôme naturel [goût X / sans
+**Sévérité** : `attention`.
+
+**Texte type** : « Cet ingrédient est étiqueté « arôme naturel [goût X / sans
 source nommée] ». La mention « arôme naturel de [ingrédient] » impliquerait
-qu'au moins 95 % de l'arôme provient de cette source. Source : règlement
-(CE) n° 1334/2008 (à confirmer, art. 16) ; règlement (UE) 2018/848 pour le
-cadre bio. »
+qu'au moins 95 % de l'arôme provient de cette source nommée. »
+
+### Implémentation : le doute reste silencieux
+
+C'est la règle la plus délicate du moteur : elle repose sur du parsing de
+langue naturelle dans un champ libre (`ingredients_text_fr`), pas sur des
+tags structurés — fautes de frappe, casse aléatoire, mentions multiples dans
+une même liste (« arôme naturel de citron et autres arômes naturels »).
+
+Elle est donc isolée en module dédié, avec sa propre batterie de tests,
+séparé de la règle qui en consomme le résultat :
+
+- `src/engine/rules/aromes/parser.ts` — classe chaque mention détectée en
+  `conforme` / `non-conforme` / `incertain`. Testé isolément dans
+  `__tests__/engine/aromes.parser.test.ts` (17 cas : accents/casse, pluriel,
+  contraction « d' », mentions multiples, structures non reconnues).
+- `src/engine/rules/aromes/index.ts` — la règle elle-même : n'émet un
+  insight que pour les mentions `non-conforme`. Les mentions `conforme` et
+  `incertain` ne produisent **jamais** d'insight. Testée dans
+  `__tests__/engine/aromes.test.ts`.
+
+Un faux positif sur cette règle est une accusation de non-conformité contre
+une marque nommée — plus grave qu'un faux négatif. Quand le parser ne peut
+pas classer une clause avec confiance, il retourne `incertain`, et la règle
+ne dit rien : le silence est toujours préférable au doute affiché. Limites
+connues du parser (assumées, pas dissimulées — voir les commentaires du
+fichier) : il tolère l'absence d'accent circonflexe mais pas les autres
+fautes de frappe, et une source composée sous un seul « de » (« arôme
+naturel de fraise et de framboise ») n'en compte que la première partie.
 
 ---
 
@@ -73,16 +103,21 @@ d'un marqueur de texture : gomme xanthane (E415), guar (E412), caroube
 (E410), pectine (E440), inuline, fibre d'acacia, maltodextrine.
 
 **Source** :
-- NOVA n'est **pas un texte réglementaire** : c'est une classification
-  scientifique (Monteiro et al., reprise par Open Food Facts).
+- NOVA n'est **pas un texte réglementaire, pas une norme officielle** :
+  c'est une classification scientifique développée par l'équipe du
+  professeur Carlos Monteiro, Université de São Paulo (Brésil), reprise par
+  Open Food Facts. Le nommer explicitement dans le texte affiché évite de
+  laisser croire à une autorité réglementaire qu'elle n'a pas.
 - Le statut des additifs texturants relève du règlement (CE) n° 1333/2008
   sur les additifs alimentaires.
 
 **Texte type** : « Classé NOVA 4 (aliment ultra-transformé) selon la
-classification NOVA. Contient [additif texturant, ex. gomme xanthane
-(E415)], un additif autorisé en bio. Source : classification NOVA (Monteiro
-et al., reprise par Open Food Facts) ; règlement (CE) n° 1333/2008 pour le
-statut de l'additif. »
+classification NOVA, développée par l'Université de São Paulo (équipe
+Monteiro) et reprise par Open Food Facts — ce n'est pas une norme
+officielle. Contient [additif texturant, ex. gomme xanthane (E415)], un
+additif autorisé en bio. Source : classification NOVA (Monteiro et al.,
+Université de São Paulo) ; règlement (CE) n° 1333/2008 pour le statut de
+l'additif. »
 
 ---
 
@@ -93,11 +128,14 @@ statut de l'additif. »
 (bio ou non), jus concentré de pomme ou de raisin, sirop d'agave, dextrose.
 
 **Source** : **aucune** — constat nutritionnel, pas un texte réglementaire.
-Ne pas citer de règlement pour cette règle.
+Ne pas citer de règlement pour cette règle. C'est un repère de lecture, pas
+une règle de conformité : le texte affiché doit le refléter, pas laisser
+croire à une infraction.
 
-**Texte type** : « Contient [sirop de glucose bio / jus concentré de
-pomme…], une source de sucres ajoutés même en filière biologique. La
-certification bio ne porte pas sur la teneur en sucre du produit. »
+**Texte type** : « Repère de lecture — contient [sirop de glucose bio / jus
+concentré de pomme…], une source de sucres ajoutés même en filière
+biologique. La certification bio ne porte pas sur la teneur en sucre du
+produit. »
 
 ---
 
@@ -107,10 +145,11 @@ certification bio ne porte pas sur la teneur en sucre du produit. »
 **Déclencheur** : `ingredients_analysis_tags` contient `en:palm-oil`.
 
 **Source** : tag calculé automatiquement par Open Food Facts à partir de la
-liste d'ingrédients — **pas un texte réglementaire**.
+liste d'ingrédients — **pas un texte réglementaire**. Repère de lecture, pas
+une règle de conformité.
 
-**Texte type** : « Contient de l'huile de palme, identifiée par Open Food
-Facts dans la liste d'ingrédients. »
+**Texte type** : « Repère de lecture — contient de l'huile de palme,
+identifiée par Open Food Facts dans la liste d'ingrédients. »
 
 ---
 
@@ -167,11 +206,11 @@ référence à construire lors de l'implémentation).
 
 **Source** : **aucune** — heuristique éditoriale interne à Verso. À
 présenter dans l'app comme un choix de lecture, pas comme une norme
-extérieure.
+extérieure ni une règle de conformité.
 
-**Texte type** : « Ce produit compte [N] ingrédients. Au-delà de huit, ou en
-présence d'ingrédients peu courants en cuisine domestique, c'est un signe
-d'industrialisation du produit. »
+**Texte type** : « Repère de lecture — ce produit compte [N] ingrédients.
+Au-delà de huit, ou en présence d'ingrédients peu courants en cuisine
+domestique, c'est un signe d'industrialisation du produit. »
 
 ---
 

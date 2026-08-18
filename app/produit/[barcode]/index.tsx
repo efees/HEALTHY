@@ -37,6 +37,13 @@ export default function ProduitScreen() {
 
   const { product } = data;
 
+  // TODO (étape 4, branchement du moteur) : la section "Ce qui mérite votre
+  // attention" prendra place ici. Elle doit distinguer explicitement "aucune
+  // vigilance" (profil complet, rien détecté) de "profil incomplet" (des
+  // questions d'onboarding sautées) — dans ce second cas, proposer de
+  // compléter le profil plutôt que de laisser croire qu'aucune vigilance ne
+  // s'applique. Voir HealthProfile dans src/engine/types.ts : un champ
+  // absent signifie "non renseigné", jamais "non".
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {product.image_url ? (

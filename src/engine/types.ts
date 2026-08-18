@@ -60,6 +60,13 @@ export type AgeRange = '18-24' | '25-39' | '40-59' | '60+';
  * pas "non"/"aucun". L'onboarding est sautable et modifiable à tout moment
  * (voir le brief), donc une question sans réponse ne doit jamais être
  * traitée par le moteur comme une réponse négative implicite.
+ *
+ * Cette distinction doit remonter jusqu'à l'interface (étapes 4-6) : une
+ * fiche produit sans insight de profil doit pouvoir dire "profil incomplet,
+ * complétez-le" plutôt que de laisser croire qu'aucune vigilance ne
+ * s'applique. Ne pas construire l'écran produit comme si l'absence
+ * d'insight suffisait à conclure "rien à signaler" sans vérifier d'abord si
+ * le profil est réellement renseigné.
  */
 export interface HealthProfile {
   ageRange?: AgeRange;

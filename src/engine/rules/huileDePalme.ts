@@ -2,7 +2,9 @@ import type { Rule } from '../types';
 
 /**
  * Signale la présence d'huile de palme via ingredients_analysis_tags
- * (tag `en:palm-oil`, calculé par Open Food Facts). Voir RULES.md#4-huile-de-palme.
+ * (tag `en:palm-oil`, calculé par Open Food Facts). Repère de lecture, pas
+ * une règle de conformité : aucune source réglementaire à citer. Voir
+ * RULES.md#4-huile-de-palme.
  *
  * Logique non implémentée : en attente des fixtures réelles (étape 3b).
  */
