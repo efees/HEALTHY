@@ -29,16 +29,28 @@ installés localement (voir la [doc Expo](https://docs.expo.dev/get-started/set-
 
 ## Tests
 
-Vitest et les tests du moteur de règles (`src/engine`, fixtures dans
-`__tests__/engine`) arrivent à l'étape 3 de la construction (voir plus bas).
+```bash
+npm test          # exécute la suite une fois
+npm run test:watch
+```
+
+Le moteur de règles (`src/engine`) est un module TypeScript pur, sans
+dépendance React, entièrement testable en isolation. Sa structure et son
+harnais de test sont en place (`__tests__/engine`), mais **la logique des
+règles n'est pas encore implémentée** — chaque règle est un stub qui
+renvoie `[]`, et les tests correspondants sont marqués `.todo`. Les
+fixtures Open Food Facts réelles (`src/fixtures/off/products`, voir son
+README) alimenteront à la fois le mode mock de l'app et ces tests dès
+qu'elles seront ajoutées, sans réécriture de la structure.
 
 ## État d'avancement
 
 Le projet avance par paliers (voir historique de commits) :
 
 - [x] 1. Projet Expo, navigation, écrans vides, thème
-- [ ] 2. Scan de code-barres et appel Open Food Facts
-- [ ] 3. Moteur de règles et ses tests
+- [x] 2. Scan de code-barres et appel Open Food Facts
+- [ ] 3. Moteur de règles et ses tests (structure et harnais en place,
+      logique en attente des fixtures réelles — voir `RULES.md`)
 - [ ] 4. Branchement du moteur sur la fiche produit
 - [ ] 5. Onboarding et stockage local du profil
 - [ ] 6. Filtrage des insights par profil
