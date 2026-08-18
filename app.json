@@ -27,7 +27,13 @@
       "bundler": "metro"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Verso a besoin d'accéder à l'appareil photo pour scanner le code-barres des produits."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
