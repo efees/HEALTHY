@@ -1,4 +1,5 @@
 import type { Rule } from '../../types';
+import { recordAromeRuleOutcome } from './instrumentation';
 import { parseAromeMentions } from './parser';
 
 const SOURCE = {
@@ -20,23 +21,31 @@ const SOURCE = {
 export const aromeRule: Rule = (product) => {
   const text = product.ingredients_text_fr;
   if (!text) {
+    recordAromeRuleOutcome('sans-mention');
     return [];
   }
 
   const mentions = parseAromeMentions(text);
-  const hasUncertainty = mentions.some((mention) => mention.verdict === 'incertain');
-  if (hasUncertainty) {
+  if (mentions.length === 0) {
+    recordAromeRuleOutcome('sans-mention');
     return [];
   }
 
-  return mentions
-    .filter((mention) => mention.verdict === 'non-conforme')
-    .map((mention, index) => ({
-      id: `arome-${index}`,
-      severity: 'attention',
-      category: 'arome',
-      title: 'Arôme sans source nommée',
-      explanation: `Cet ingrédient est étiqueté « ${mention.raw} ». La mention « arôme naturel de [ingrédient] » impliquerait qu'au moins 95 % de l'arôme provient de cette source nommée.`,
-      source: SOURCE,
-    }));
+  const hasUncertainty = mentions.some((mention) => mention.verdict === 'incertain');
+  if (hasUncertainty) {
+    recordAromeRuleOutcome('silencieux-incertain');
+    return [];
+  }
+
+  const nonConformes = mentions.filter((mention) => mention.verdict === 'non-conforme');
+  recordAromeRuleOutcome(nonConformes.length > 0 ? 'signale' : 'silencieux-conforme');
+
+  return nonConformes.map((mention, index) => ({
+    id: `arome-${index}`,
+    severity: 'attention',
+    category: 'arome',
+    title: 'Arôme sans source nommée',
+    explanation: `Cet ingrédient est étiqueté « ${mention.raw} ». La mention « arôme naturel de [ingrédient] » impliquerait qu'au moins 95 % de l'arôme provient de cette source nommée.`,
+    source: SOURCE,
+  }));
 };

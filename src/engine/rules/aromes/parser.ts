@@ -1,3 +1,5 @@
+import { type AromeUncertaintyReason, recordAromeMention } from './instrumentation';
+
 export type AromeVerdict = 'conforme' | 'non-conforme' | 'incertain';
 
 export interface AromeMention {
@@ -6,6 +8,11 @@ export interface AromeMention {
   verdict: AromeVerdict;
   /** Source nommée après "de"/"d'", uniquement quand verdict === 'conforme'. */
   source?: string;
+}
+
+/** Forme interne, avec la raison d'incertitude pour l'instrumentation — jamais exposée à l'appelant. */
+interface InternalMention extends AromeMention {
+  reason?: AromeUncertaintyReason;
 }
 
 // Frontières "dures" : au-delà, on ne suppose jamais une continuation de la
@@ -50,6 +57,11 @@ const CONTAINS_STANDALONE_ET = /\bet\b/i;
  *
  * Autre limite connue, assumée : ne corrige pas les fautes de frappe
  * au-delà de l'accent circonflexe (arome/gout).
+ *
+ * Instrumentation : chaque mention finale est comptabilisée (verdict, et
+ * raison quand incertaine) via recordAromeMention — désactivée par défaut,
+ * voir ./instrumentation.ts. Sert à mesurer le taux de silence une fois de
+ * vraies fixtures/scans disponibles, pas à modifier le comportement ici.
  */
 export function parseAromeMentions(ingredientsText: string): AromeMention[] {
   if (!ingredientsText.trim()) {
@@ -61,7 +73,7 @@ export function parseAromeMentions(ingredientsText: string): AromeMention[] {
     .map((segment) => segment.trim())
     .filter(Boolean);
 
-  const mentions: AromeMention[] = [];
+  const mentions: InternalMention[] = [];
 
   for (let i = 0; i < segments.length; i++) {
     const segmentMentions = parseSegment(segments[i]);
@@ -81,24 +93,35 @@ export function parseAromeMentions(ingredientsText: string): AromeMention[] {
       // avec certitude d'un simple passage à l'ingrédient suivant.
       last.verdict = 'incertain';
       last.raw = `${last.raw}, ${nextSegment}`;
+      last.reason = 'coordination';
       delete last.source;
     }
 
     mentions.push(...segmentMentions);
   }
 
-  return mentions;
+  for (const mention of mentions) {
+    recordAromeMention(mention.verdict, mention.reason);
+  }
+
+  return mentions.map(toPublicMention);
+}
+
+function toPublicMention(mention: InternalMention): AromeMention {
+  return mention.source !== undefined
+    ? { raw: mention.raw, verdict: mention.verdict, source: mention.source }
+    : { raw: mention.raw, verdict: mention.verdict };
 }
 
 /** Découpe une clause (déjà isolée par virgule/point-virgule/parenthèses) sur les "et" autonomes. */
-function parseSegment(segment: string): AromeMention[] {
+function parseSegment(segment: string): InternalMention[] {
   const parts = segment
     .split(/\bet\b/i)
     .map((part) => part.trim())
     .filter(Boolean);
 
-  const mentions: AromeMention[] = [];
-  let current: AromeMention | null = null;
+  const mentions: InternalMention[] = [];
+  let current: InternalMention | null = null;
 
   for (const part of parts) {
     const match = part.match(TRIGGER_PATTERN);
@@ -118,7 +141,7 @@ function parseSegment(segment: string): AromeMention[] {
       if (current) {
         mentions.push(current);
       }
-      current = { raw: part, verdict: 'incertain' };
+      current = { raw: part, verdict: 'incertain', reason: 'structure-non-reconnue' };
       continue;
     }
 
@@ -127,6 +150,7 @@ function parseSegment(segment: string): AromeMention[] {
       // sources qu'on ne valide pas en détail, jamais un fait acquis.
       if (current.verdict === 'conforme') {
         current.verdict = 'incertain';
+        current.reason = 'coordination';
         delete current.source;
       }
       current.raw = `${current.raw} et ${part}`;
@@ -143,7 +167,7 @@ function classify(
   raw: string,
   preposition: string | undefined,
   sourceRaw: string | undefined
-): AromeMention {
+): InternalMention {
   if (!preposition) {
     return { raw, verdict: 'non-conforme' };
   }
@@ -152,7 +176,7 @@ function classify(
   }
   const source = sourceRaw?.trim();
   if (!source) {
-    return { raw, verdict: 'incertain' };
+    return { raw, verdict: 'incertain', reason: 'source-manquante' };
   }
   return { raw, verdict: 'conforme', source };
 }

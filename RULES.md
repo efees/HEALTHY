@@ -103,6 +103,19 @@ fortuitement un « et » (« arôme naturel de citron, poivre et sel ») peut
 aussi déclencher `incertain` à tort — un excès de silence, jamais un excès
 d'accusation.
 
+### Mesurer le taux de silence
+
+Le compromis « on préfère se taire » n'a de sens que si le silence reste
+rare. `src/engine/rules/aromes/instrumentation.ts` fournit un compteur
+désactivé par défaut (aucun coût, aucun effet en production) :
+`enableAromeParserInstrumentation()`, puis `getAromeParserStats()` (par
+verdict, et par raison pour les `incertain`) et
+`getAromeUncertaintyRate()` — la part des produits *ayant au moins une
+mention d'arôme* où la règle s'est tue à cause du doute, hors produits sans
+arôme du tout. À activer dans un script tournant sur les fixtures réelles,
+puis sur de vrais scans, une fois disponibles : si ce taux est élevé (60 %
+a été cité comme alarmant), le parser doit être repris, pas juste surveillé. Testé dans `__tests__/engine/aromes.instrumentation.test.ts`.
+
 ---
 
 ## 2. Ultra-transformation
