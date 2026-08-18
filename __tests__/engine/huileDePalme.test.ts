@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { huileDePalmeRule } from '../../src/engine/rules/huileDePalme';
 import { offFixtureList } from '../../src/fixtures/off';
+import { offSyntheticFixtures } from '../../src/fixtures/off/synthetic';
 import type { OFFProduct } from '../../src/types/openFoodFacts';
 
 describe('règle huile de palme — sur les fixtures réelles', () => {
@@ -11,8 +12,15 @@ describe('règle huile de palme — sur les fixtures réelles', () => {
   });
 });
 
-describe('règle huile de palme — non testé en positif, aucune fixture n’en contient', () => {
-  it.todo('signale la présence du tag ingredients_analysis_tags "en:palm-oil"');
+describe('règle huile de palme — sur fixture synthétique (aucune vraie fixture n’en contient encore)', () => {
+  // À revalider avec une vraie fixture dès qu'elle sera disponible — voir
+  // src/fixtures/off/synthetic/README.md.
+  it('signale la présence du tag ingredients_analysis_tags "en:palm-oil"', () => {
+    const product = offSyntheticFixtures['9999999999992'];
+    const [insight] = huileDePalmeRule(product, {});
+    expect(insight.category).toBe('transformation');
+    expect(insight.explanation).toContain('huile de palme');
+  });
 });
 
 describe('règle huile de palme — câblage', () => {

@@ -1,0 +1,37 @@
+{
+  "code": "9999999999993",
+  "status": 1,
+  "status_verbose": "product found",
+  "product": {
+    "code": "9999999999993",
+    "product_name_fr": "Biscuits sablés nature (fixture synthétique, non bio)",
+    "brands": "Marque Distributeur",
+    "image_url": "https://images.openfoodfacts.org/images/products/000/000/000/9993/front_fr.400.jpg",
+    "ingredients_text_fr": "Farine de blé, sucre, beurre 20%, oeufs, sel, levure chimique.",
+    "ingredients_analysis_tags": ["en:palm-oil-free", "en:vegetarian", "en:non-vegan"],
+    "additives_tags": ["en:e500"],
+    "allergens_tags": ["en:gluten", "en:eggs", "en:milk"],
+    "traces_tags": ["en:nuts", "en:soybeans"],
+    "labels_tags": ["en:nutriscore", "en:nutriscore-grade-c", "en:vegetarian"],
+    "origins_tags": ["en:france"],
+    "countries_tags": ["en:france"],
+    "manufacturing_places": "France",
+    "categories_tags": ["en:snacks", "en:biscuits-and-cakes", "en:biscuits", "en:shortbread-cookies"],
+    "nova_group": 3,
+    "nutriscore_grade": "c",
+    "ecoscore_grade": "c",
+    "nutriments": {
+      "energy-kcal_100g": 470,
+      "fat_100g": 20,
+      "saturated-fat_100g": 11,
+      "carbohydrates_100g": 64,
+      "sugars_100g": 21,
+      "fiber_100g": 2.1,
+      "proteins_100g": 6.5,
+      "salt_100g": 0.7,
+      "sodium_100g": 0.28
+    },
+    "quantity": "300 g",
+    "packaging_tags": ["en:plastic", "en:cardboard"]
+  }
+}

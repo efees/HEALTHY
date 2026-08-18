@@ -35,21 +35,21 @@ npm run test:watch
 ```
 
 Le moteur de règles (`src/engine`) est un module TypeScript pur, sans
-dépendance React, entièrement testable en isolation. 5 règles sur 12 sont
-implémentées : arômes, ultra-transformation, huile de palme, certification,
-origine (voir `RULES.md`). Les autres (sucres déguisés, longueur de liste,
-règles de profil) restent des stubs qui renvoient `[]`, avec des tests
-`.todo` en attente. Fixtures Open Food Facts réelles dans
-`src/fixtures/off/products` (voir son README) — 4 reçues pour l'instant sur
-les 7 prévues.
+dépendance React, entièrement testable en isolation. 10 règles sur 12 sont
+implémentées — toutes sauf sucres déguisés et longueur de liste, encore des
+stubs qui renvoient `[]` (voir `RULES.md`).
 
-Deux règles (ultra-transformation, huile de palme) n'ont encore aucune
-fixture qui déclenche leur cas positif — leurs tests de détection restent
-`.todo` explicitement plutôt que de passer artificiellement par absence de
-cas. `__tests__/engine/produitNonBio.test.ts` vérifie, avec un produit
-construit à la main faute de fixture non-bio disponible, que le moteur se
-tait correctement en dehors de son terrain (aucune des fixtures reçues
-n'est un produit non-bio de contrôle).
+Fixtures Open Food Facts **réelles** dans `src/fixtures/off/products` (voir
+son README) — 4 reçues pour l'instant sur les 7 prévues. Fixtures
+**synthétiques**, construites à la main pour les cas encore manquants
+(NOVA 4, huile de palme, non-bio), dans `src/fixtures/off/synthetic` — un
+registre séparé, jamais lu par le mode mock de l'app ni par la mesure du
+taux d'incertitude arômes, à comparer aux vraies fixtures équivalentes dès
+qu'elles arriveront. `RULES.md` précise, règle par règle, ce qui est
+couvert par donnée réelle, par fixture synthétique, ou encore `.todo` faute
+des deux. `__tests__/engine/produitNonBio.test.ts` vérifie en plus, avec un
+produit non-bio construit à la main, que le moteur se tait correctement en
+dehors de son terrain.
 
 ```bash
 npm run measure:aromes   # taux de silence de la règle arômes sur les fixtures
@@ -61,9 +61,8 @@ Le projet avance par paliers (voir historique de commits) :
 
 - [x] 1. Projet Expo, navigation, écrans vides, thème
 - [x] 2. Scan de code-barres et appel Open Food Facts
-- [ ] 3. Moteur de règles et ses tests (5/12 règles implémentées ;
-      sucres déguisés, longueur de liste et les règles de profil restent
-      des stubs — voir `RULES.md`)
+- [ ] 3. Moteur de règles et ses tests (10/12 règles implémentées ; sucres
+      déguisés et longueur de liste restent des stubs — voir `RULES.md`)
 - [ ] 4. Branchement du moteur sur la fiche produit
 - [ ] 5. Onboarding et stockage local du profil
 - [ ] 6. Filtrage des insights par profil

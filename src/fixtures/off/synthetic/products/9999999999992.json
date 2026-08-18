@@ -1,0 +1,37 @@
+{
+  "code": "9999999999992",
+  "status": 1,
+  "status_verbose": "product found",
+  "product": {
+    "code": "9999999999992",
+    "product_name_fr": "Sablés pur beurre bio (fixture synthétique)",
+    "brands": "Marque Fictive",
+    "image_url": "https://images.openfoodfacts.org/images/products/000/000/000/9992/front_fr.400.jpg",
+    "ingredients_text_fr": "Farine de blé* 45%, beurre* 20%, sucre de canne*, huile de palme*, oeufs*, sel. *Ingrédients issus de l'agriculture biologique.",
+    "ingredients_analysis_tags": ["en:palm-oil", "en:vegetarian", "en:non-vegan"],
+    "additives_tags": [],
+    "allergens_tags": ["en:gluten", "en:eggs", "en:milk"],
+    "traces_tags": ["en:nuts"],
+    "labels_tags": ["en:organic", "en:eu-organic", "fr:ab-agriculture-biologique"],
+    "origins_tags": ["en:france"],
+    "countries_tags": ["en:france"],
+    "manufacturing_places": "France",
+    "categories_tags": ["en:snacks", "en:biscuits-and-cakes", "en:biscuits", "en:shortbread-cookies"],
+    "nova_group": 3,
+    "nutriscore_grade": "d",
+    "ecoscore_grade": "b",
+    "nutriments": {
+      "energy-kcal_100g": 495,
+      "fat_100g": 25,
+      "saturated-fat_100g": 13,
+      "carbohydrates_100g": 61,
+      "sugars_100g": 22,
+      "fiber_100g": 1.8,
+      "proteins_100g": 6.1,
+      "salt_100g": 0.5,
+      "sodium_100g": 0.2
+    },
+    "quantity": "200 g",
+    "packaging_tags": ["en:plastic", "en:cardboard"]
+  }
+}

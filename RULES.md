@@ -3,16 +3,21 @@
 Ce document liste, pour chaque règle prévue du moteur (`src/engine/rules/`) :
 son déclencheur, sa source, et le texte type affiché à l'utilisatrice.
 
-**Statut d'implémentation** : arômes (§1), ultra-transformation (§2), huile
-de palme (§4), certification (§5) et origine (§6) sont implémentées.
-Sucres déguisés (§3), longueur de liste (§7) et les règles de profil
-(§8-12) restent des stubs dans `src/engine/rules/` qui renvoient `[]`. Sur
-les 5 règles implémentées, seules arômes, certification et origine ont une
-couverture de test **positive** par fixture réelle — ultra-transformation
-et huile de palme n'ont, pour l'instant, que 4 fixtures qui ne les
-déclenchent jamais (aucune n'est NOVA 4, aucune ne contient d'huile de
-palme) : leurs tests de détection positive sont explicitement marqués
-`.todo` plutôt que de passer par absence de cas, voir chaque section.
+**Statut d'implémentation** : 10 règles sur 12 sont implémentées — toutes
+sauf sucres déguisés (§3) et longueur de liste (§7), encore des stubs dans
+`src/engine/rules/` qui renvoient `[]`.
+
+Couverture de test par fixture réelle, règle par règle : arômes,
+certification, origine, diabète et allergies sont bien couvertes en
+positif par les 4 fixtures reçues. Ultra-transformation, huile de palme,
+fonction rénale et enfant en bas âge n'ont pas (encore) de cas positif réel
+— trois fixtures **synthétiques**, construites à la main et clairement
+séparées du registre réel (`src/fixtures/off/synthetic/`, jamais utilisées
+par le mode mock de l'app ni par la mesure du taux d'incertitude arômes),
+couvrent une partie de ce manque en attendant les vraies. Grossesse reste
+sans aucun cas positif, réel ou synthétique. Chaque section précise
+exactement ce qui est testé sur donnée réelle, sur fixture synthétique, ou
+encore `.todo`.
 
 ## Avertissement sur les sources citées ici
 
@@ -38,6 +43,37 @@ Je distingue aussi quatre natures de source, pas toutes de même poids :
   produit alimentaire générique.
 - **Heuristique éditoriale** : choix de conception propre à Verso, sans
   source externe — à présenter comme tel dans l'app, jamais comme une norme.
+
+## Principe général : données contradictoires
+
+Open Food Facts est alimenté par des contributeurs bénévoles. Quand deux
+champs d'un même produit se contredisent — une origine déclarée « hors
+Union européenne » alors que le lieu de fabrication est aux Pays-Bas
+(§6, exemple réel du beurre de cacahuète), un Nutri-Score affiché qui ne
+correspond pas au Nutri-Score recalculé, une catégorie qui ne correspond
+pas aux ingrédients — **le moteur affiche la contradiction, il ne la
+résout pas**. Aucune règle ne doit choisir arbitrairement quel champ
+« a raison » ni masquer l'un des deux au profit de l'autre.
+
+Deux raisons à ça, pas une seule commodité technique :
+
+1. **On n'a aucune autorité pour trancher.** Contrairement à un champ
+   calculé par Open Food Facts lui-même (Nutri-Score, Eco-Score, NOVA),
+   une contradiction entre deux champs saisis par des contributeurs
+   différents n'a pas de source faisant foi que le moteur puisse consulter.
+   Deviner laquelle des deux valeurs est correcte serait aussi mal fondé
+   qu'une devinette sur un mot mal orthographié dans un arôme — la même
+   logique qu'à la règle 1 : le silence ou la transparence plutôt que
+   l'affirmation non vérifiée.
+2. **La contradiction elle-même est une information.** Une utilisatrice
+   qui voit "origine hors UE, fabriqué aux Pays-Bas" apprend quelque chose
+   de réel sur la fiabilité de la fiche produit qu'elle consulte — un
+   signal utile, pas un bug à cacher. Lisser la contradiction pour
+   présenter une fiche "propre" serait plus rassurant, mais moins honnête.
+
+En pratique, une règle qui croise plusieurs champs (origine, mais aussi
+toute règle future qui ferait de même) doit citer les champs en conflit
+tels quels dans son texte, jamais réduire à un seul en ignorant l'autre.
 
 ---
 
@@ -248,6 +284,32 @@ réellement observés : FR-BIO-01, DE-ÖKO-001, GB-ORG-05, NL-BIO-01 — un
 produit peut en cumuler plusieurs (le muesli Bjorg en porte deux, le beurre
 de cacahuète aussi).
 
+### Ce que chaque label garantit réellement
+
+| Tag OFF | Nature | Ce qu'il garantit |
+|---|---|---|
+| `en:eu-organic` | Officiel, réglementaire | Le logo Eurofeuille : conformité au règlement (UE) 2018/848 — au moins 95 % des ingrédients agricoles issus de l'agriculture biologique, pas d'OGM, contrôle annuel par un organisme certificateur accrédité. Le seul tag qui déclenche l'insight "certification officielle". |
+| `fr:ab-agriculture-biologique` | Officiel, réglementaire | Le label français "AB". ⚠️ Avant l'harmonisation européenne (~2010), l'AB portait un cahier des charges propre, parfois plus strict que le futur règlement UE ; depuis, il est aligné sur le règlement européen et n'ajoute pas d'exigence supplémentaire vérifiée — mais je n'ai pas confirmé ce point précis contre un texte à jour, à vérifier avant de l'affirmer dans l'app. Déclenche le même insight que `en:eu-organic` : les deux sont traités comme équivalents dans le code. |
+| `en:{pays}-{bio\|oko\|org}-{numéro}` (ex. `en:fr-bio-01`) | Métadonnée du certificateur | N'est pas un label en soi : identifie *qui* a contrôlé la conformité au règlement bio (ex. FR-BIO-01 = Ecocert France). Affiché en complément de la certification officielle, jamais seul. |
+| `en:demeter` | Privé | Cahier des charges Demeter International (biodynamie) : pratiques allant au-delà du règlement bio européen (calendrier biodynamique, préparations spécifiques, certification à l'échelle de la ferme). ⚠️ Slug non vérifié sur une vraie fixture — voir plus bas. |
+| `fr:nature-et-progres` | Privé | Fédération française antérieure à la réglementation bio officielle ; charte interne sans les dérogations que permet le règlement UE. ⚠️ Slug non vérifié. |
+| `fr:bio-coherence` | Privé | Label créé par des producteurs français jugeant le règlement UE 2018/848 insuffisant sur certains points (ex. 100 % bio visé plutôt que le seuil de 95 %, ancrage local). ⚠️ Slug non vérifié. |
+
+Les trois labels privés ci-dessus sont des repères généraux sur ce que ces
+cahiers des charges visent à garantir, pas une lecture juridique de leur
+contenu exact — à confirmer avec la documentation propre de chaque
+organisme avant affichage, au même titre que les citations réglementaires
+marquées ⚠️ ailleurs dans ce document.
+
+**Labels rencontrés sur les fixtures actuelles qui ne sont volontairement
+signalés par aucun insight de cette règle**, pour montrer où s'arrête son
+périmètre : `en:certified-by-ecocert` (identifie l'organisme, déjà couvert
+par le code certificateur), `en:certified-b-corporation`, `en:1-for-the-planet`,
+`en:planet-score`, `en:the-vegan-society`, `en:nutriscore*`, `en:vegan`,
+`en:vegetarian`, `en:no-added-sugar`, `en:no-palm-oil`, `en:triman`,
+`fr:céréales-complètes` — aucun n'est une certification bio, et la règle
+ne les traite pas comme telle.
+
 Bien testé en positif : les 4 fixtures actuelles couvrent le cas "aucun
 code" (Gerblé), un code (Vrai), et deux codes (Bjorg, beurre de cacahuète).
 
@@ -337,6 +399,23 @@ ne pas inventer de référence.
 publique préconisent de l'éviter pendant la grossesse. Source : [ANSES /
 Santé publique France — référence précise à compléter]. »
 
+**Sévérité** : `vigilance` — les règles déclenchées par le profil utilisent
+ce niveau par défaut dans tout le moteur : c'est le sens même du champ
+`vigilances` du profil, le plus personnellement pertinent pour
+l'utilisatrice.
+
+### Implémentation
+
+`src/engine/rules/profil/grossesse.ts`. Détection par motif simple (mot ou
+expression isolée dans `ingredients_text_fr` : `alcool`, `foie`/`abats`,
+`lait cru`, `soja`, `caféine`) — pas la grammaire "de X" des arômes, risque
+de faux positif nettement plus faible.
+
+**Non testé en positif** : aucune fixture, réelle ou synthétique, ne
+contient un de ces marqueurs — je n'en ai pas construit pour ce lot,
+n'ayant reçu la consigne que pour NOVA 4 / huile de palme / non-bio. Marqué
+`.todo` dans `__tests__/engine/profil.test.ts`.
+
 ---
 
 ## 9. Profil — Fonction rénale
@@ -359,6 +438,27 @@ plage brute.
 **Texte type** : « Teneur en sodium de [x] g/100g. Une vigilance
 fréquemment recommandée en cas de suivi de la fonction rénale. »
 
+**Sévérité** : `vigilance`.
+
+### Implémentation
+
+`src/engine/rules/profil/renal.ts`. Liste phosphatée explicite plutôt que
+la plage brute "E338 à E452" : E338-E341, E343 (acide phosphorique et
+phosphates), E450-E452 (di-, tri- et polyphosphates).
+
+⚠️ **Seuils non validés** : sodium ≥ 0,3 g/100g, potassium ≥ 0,6 g/100g,
+phosphore ≥ 0,3 g/100g sont des seuils heuristiques que j'ai choisis pour
+ce prototype, pas des seuils cliniques établis — à faire réviser par un
+professionnel de santé avant affichage dans l'app, au même titre que les
+citations réglementaires marquées ⚠️ ailleurs dans ce document. Le code le
+rappelle en commentaire à côté des constantes.
+
+**Non testé en positif sur données réelles** : aucune des 4 fixtures
+actuelles n'a de valeur `potassium_100g`/`phosphorus_100g` renseignée, et
+aucune ne dépasse le seuil de sodium retenu. Testé sur la fixture
+synthétique NOVA 4 (voir `src/fixtures/off/synthetic/`), à revalider dès
+qu'une vraie fixture le permettra.
+
 ---
 
 ## 10. Profil — Diabète
@@ -371,6 +471,24 @@ ingrédients dominants.
 réglementaire**.
 
 **Texte type** : « Teneur en sucres de [x] g/100g. »
+
+**Sévérité** : `vigilance`.
+
+### Implémentation
+
+`src/engine/rules/profil/diabete.ts`. Seuil retenu : sucres ≥ 15 g/100g.
+
+⚠️ **Seuil non validé cliniquement**, même réserve que pour la règle
+rénale (§9).
+
+**Index glycémique des ingrédients dominants, prévu par le brief : non
+implémenté.** Il demanderait une base de référence des index glycémiques
+par ingrédient que le moteur n'a pas construite — mieux vaut ne rien
+afficher que deviner un index à partir du nom d'un ingrédient.
+
+Bien testé en positif sur données réelles : le biscuit Gerblé (16 g de
+sucres/100g) dépasse le seuil, le yaourt Vrai (4,3 g/100g) reste en
+dessous — aucune fixture synthétique nécessaire pour cette règle.
 
 ---
 
@@ -393,6 +511,25 @@ vigueur au moment de la mise en production.
 allergie à [allergène] dans votre profil. Source : règlement (UE)
 n° 1169/2011, annexe II (liste des allergènes à déclaration obligatoire). »
 
+**Sévérité** : `vigilance`.
+
+### Implémentation
+
+`src/engine/rules/profil/allergies.ts`. Correspondance directe entre les 14
+allergènes réglementaires (type `RegulatedAllergen`) et les tags Open Food
+Facts (`en:gluten`, `en:crustaceans`, `en:eggs`, `en:fish`, `en:peanuts`,
+`en:soybeans`, `en:milk`, `en:nuts`, `en:celery`, `en:mustard`,
+`en:sesame-seeds`, `en:sulphur-dioxide-and-sulphites`, `en:lupin`,
+`en:molluscs`). Distingue `allergens_tags` (présence confirmée, texte "Contient…")
+de `traces_tags` (contamination possible, texte "Traces possibles de…") —
+deux niveaux de certitude différents, jamais confondus dans le texte
+affiché.
+
+Bien testé en positif sur données réelles, la règle la mieux couverte du
+lot : gluten et lait en allergène direct (Gerblé, yaourt Vrai), arachides
+(beurre de cacahuète), lupin et graines de sésame en trace uniquement
+(Gerblé, beurre de cacahuète). Aucune fixture synthétique nécessaire.
+
 ---
 
 ## 12. Profil — Enfant en bas âge
@@ -414,6 +551,29 @@ affichage.
 **Texte type** : « Teneur en sel de [x] g/100g. Les repères nutritionnels
 pour les enfants de moins de trois ans recommandent de limiter les apports
 en sel. Source : [PNNS / ANSES — référence précise à compléter]. »
+
+**Sévérité** : `vigilance`.
+
+### Implémentation
+
+`src/engine/rules/profil/enfant.ts`. Seuils retenus : sel ≥ 0,5 g/100g,
+sucres *ajoutés* ≥ 10 g/100g — spécifiquement `added-sugars_100g`, jamais
+`sugars_100g` (sucres totaux, y compris naturellement présents) en repli :
+mieux vaut ne rien afficher si cette donnée précise manque que de
+conflater deux notions différentes.
+
+⚠️ **Seuils non validés cliniquement**, même réserve que les règles rénale
+et diabète.
+
+**Additifs déconseillés avant trois ans, prévus par le brief : non
+implémentés.** Je n'ai pas de liste de référence vérifiée pour cette
+tranche d'âge spécifique — l'inventer serait exactement le genre
+d'approximation que ce projet cherche à éviter.
+
+Testé en positif : sucres ajoutés sur donnée réelle (Gerblé, 15,23 g/100g,
+`added-sugars_100g` — un champ que les fixtures actuelles renseignent
+naturellement) ; sel uniquement sur fixture synthétique, aucune fixture
+réelle ne dépassant le seuil retenu.
 
 ---
 
